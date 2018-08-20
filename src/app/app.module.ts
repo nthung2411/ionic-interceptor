@@ -1,4 +1,6 @@
-import { ItemsService } from './../services/items.service';
+import { CustomHttpInterceptor } from './../interceptors/custom-http.interceptor';
+import { TokenInterceptor } from '../interceptors/auth.interceptor';
+import { ItemsService } from '../services/items.service';
 import { BrowserModule } from '@angular/platform-browser';
 import { ErrorHandler, NgModule } from '@angular/core';
 import { IonicApp, IonicErrorHandler, IonicModule } from 'ionic-angular';
@@ -7,7 +9,24 @@ import { StatusBar } from '@ionic-native/status-bar';
 
 import { MyApp } from './app.component';
 import { HomePage } from '../pages/home/home';
-import { HttpClientModule } from '@angular/common/http';
+import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
+
+const interceptors = [
+  {
+    provide: HTTP_INTERCEPTORS,
+    useClass: CustomHttpInterceptor,
+    multi: true
+  },
+  {
+    provide: HTTP_INTERCEPTORS,
+    useClass: TokenInterceptor,
+    multi: true
+  }
+]
+
+const services = [
+  ItemsService
+]
 
 @NgModule({
   declarations: [
@@ -28,7 +47,8 @@ import { HttpClientModule } from '@angular/common/http';
     StatusBar,
     SplashScreen,
     { provide: ErrorHandler, useClass: IonicErrorHandler },
-    ItemsService
+    ...services,
+    ...interceptors
   ]
 })
 export class AppModule { }

@@ -1,54 +1,127 @@
+import { TokenInterceptor } from './../interceptors/auth.interceptor';
+import { CustomHttpInterceptor } from './../interceptors/custom-http.interceptor';
 import { ItemsService } from './items.service';
 import { TestBed, getTestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { HTTP_INTERCEPTORS } from '@angular/common/http';
 
 describe('item services', () => {
 
-    let injector: TestBed;
-    let service: ItemsService;
-    let httpMock: HttpTestingController;
+    describe('w/o interceptor', () => {
+        let injector: TestBed;
+        let service: ItemsService;
+        let httpMock: HttpTestingController;
 
-    beforeEach(() => {
-        TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
-            providers: [ItemsService]
+        beforeEach(() => {
+            TestBed.configureTestingModule({
+                imports: [HttpClientTestingModule],
+                providers: [ItemsService]
+            });
+
+            injector = getTestBed();
+            service = injector.get(ItemsService);
+            httpMock = injector.get(HttpTestingController);
+        })
+
+        afterEach(() => {
+            httpMock.verify();
         });
 
-        injector = getTestBed();
-        service = injector.get(ItemsService);
-        httpMock = injector.get(HttpTestingController);
+        it('get items should use GET', () => {
+
+            const expectedUrl = 'assets/items.mock.json';
+
+            service.getItems().subscribe(items => {
+
+            });
+
+            const req = httpMock.expectOne(expectedUrl);
+            expect(req.request.method).toBe("GET");
+        });
+
+        it('get items should return 2 items', () => {
+
+            const expectedUrl = 'assets/items.mock.json';
+            const dummyItems = [
+                { id: 1, name: 'a' },
+                { id: 2, name: 'b' }
+            ];
+
+            service.getItems().subscribe(items => {
+                expect(items.length).toBe(2);
+                expect(items).toEqual(dummyItems);
+            });
+
+            const req = httpMock.expectOne(expectedUrl);
+            req.flush(dummyItems);
+        })
     })
 
-    afterEach(() => {
-        httpMock.verify();
-    });
+    describe('with interceptor', () => {
+        let injector: TestBed;
+        let service: ItemsService;
+        let httpMock: HttpTestingController;
 
-    it('get items should use GET and return 2 items', () => {
+        beforeEach(() => {
 
-        const expectedUrl = 'assets/items.mock.json';
+            const interceptors = [
+                {
+                    provide: HTTP_INTERCEPTORS,
+                    useClass: CustomHttpInterceptor,
+                    multi: true
+                },
+                {
+                    provide: HTTP_INTERCEPTORS,
+                    useClass: TokenInterceptor,
+                    multi: true
+                }
+            ]
 
-        service.getItems().subscribe(items => {
+            TestBed.configureTestingModule({
+                imports: [HttpClientTestingModule],
+                providers: [
+                    ItemsService,
+                    ...interceptors]
+            });
 
+            injector = getTestBed();
+            service = injector.get(ItemsService);
+            httpMock = injector.get(HttpTestingController);
+        })
+
+        afterEach(() => {
+            httpMock.verify();
         });
 
-        const req = httpMock.expectOne(expectedUrl);
-        expect(req.request.method).toBe("GET");
-    });
+        it('get items should use GET', () => {
 
-    it('get items should return 2 items', () => {
+            const expectedUrl = 'assets/items.mock.json';
 
-        const expectedUrl = 'assets/items.mock.json';
-        const dummyItems = [
-            { id: 1, name: 'a' },
-            { id: 2, name: 'b' }
-        ];
+            service.getItems().subscribe();
 
-        service.getItems().subscribe(items => {
-            expect(items.length).toBe(2);
-            expect(items).toEqual(dummyItems);
+            const req = httpMock.expectOne(expectedUrl);
+            expect(req.request.method).toBe("GET");
         });
 
-        const req = httpMock.expectOne(expectedUrl);
-        req.flush(dummyItems);
+        it('get items should return 2 items', () => {
+
+            const expectedUrl = 'assets/items.mock.json';
+            const dummyItems = [
+                { id: 1, name: 'a' },
+                { id: 2, name: 'b' }
+            ];
+
+            service.getItems().subscribe(items => {
+                expect(items.length).toBe(2);
+                expect(items).toEqual(dummyItems);
+            });
+
+            const req = httpMock.expectOne(expectedUrl);
+
+            expect(req.request.headers.has('extra-header-1')).toBeTruthy();
+            expect(req.request.headers.has('extra-header-2')).toBeTruthy();
+
+            req.flush(dummyItems);
+        })
     })
 })

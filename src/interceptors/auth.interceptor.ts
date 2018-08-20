@@ -3,9 +3,11 @@ import {
     HttpRequest,
     HttpHandler,
     HttpEvent,
-    HttpInterceptor
+    HttpInterceptor,
+    HttpResponse
 } from '@angular/common/http';
 import { Observable } from 'rxjs/Observable';
+import { catchError } from 'rxjs/operators';
 
 @Injectable()
 export class TokenInterceptor implements HttpInterceptor {
@@ -15,6 +17,15 @@ export class TokenInterceptor implements HttpInterceptor {
 
         request = request.clone({ headers });
 
-        return next.handle(request);
+        return next.handle(request).pipe(
+            catchError(err => this.handleError(err))
+        );
+    }
+
+    private handleError(err: HttpResponse<any>) {
+        if (err.status === 401) {
+            return Observable.throw(`auth error ${err}`);
+        }
+        return Observable.throw(err)
     }
 }

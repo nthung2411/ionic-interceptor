@@ -1,13 +1,12 @@
 var webpackConfig = require('./webpack.test.js');
 
-module.exports = function(config) {
+module.exports = function (config) {
   var _config = {
     basePath: '../',
 
     frameworks: ['jasmine'],
 
-    files: [
-      {
+    files: [{
         pattern: './test-config/karma-test-shim.js',
         watched: true
       },
@@ -45,7 +44,7 @@ module.exports = function(config) {
     },
 
     coverageIstanbulReporter: {
-      reports: [ 'html', 'lcovonly' ],
+      reports: ['html', 'lcovonly'],
       fixWebpackSourcePaths: true
     },
 
@@ -54,8 +53,8 @@ module.exports = function(config) {
     colors: true,
     logLevel: config.LOG_INFO,
     autoWatch: true,
-    browsers: ['Chrome'],
-    singleRun: false
+    browsers: ['ChromeHeadless'],
+    singleRun: true
   };
 
   config.set(_config);
